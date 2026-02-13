@@ -19,17 +19,25 @@ def route_3(name):
 
 @app.route("/calculate")
 def route_4():
-    print(request)
-    operation= request.args["operation"]
-    operand1=request.args["num1"]
-    operand2=request.args["num2"]
-    result = None
-    if operation == 'add':
-        result = int(operand1) + int(operand2)
-
-    elif operation == 'sub':
-        result = int(operand1) - int(operand2)
-    return f"<p>result = {result}<p>"
+    num1 = float(request.args.get('num1', 0))
+    num2 = float(request.args.get('num2', 0))
+    operation = request.args.get('operation')
+    try:
+        if operation == 'add':
+            result = num1 + num2
+        elif operation == 'subtract':
+            result = num1 - num2
+        elif operation == 'multiply':
+            result = num1 * num2
+        elif operation == 'divide':
+            result = num1 / num2
+        else:
+            return jsonify({"error": "Invalid operation"}), 400
+        return jsonify({"result": result, "operation": operation})
+    except Exception as e:
+        # Log the exception and return an error response
+        print(f"Error occurred: {e}")
+        return jsonify({"error": "An error occurred during calculation"}), 500
 
 
 
@@ -42,7 +50,34 @@ def route_5():
 @app.route("/status/<int:code>")
 def route_6(code):
     message = f"This is a {code} error"
-    return message
+    return message, code
+
+@app.before_request
+def before_request():
+    method = request.method
+    path = request.path
+    print(f"Method: {method} Path: {path}")
+
+@app.after_request
+def after_request(response):
+    response.headers["X-custom-Header"] = "FlaskRocks"
+    return response
+
+@app.teardown_request
+def teardown_request(error):
+    if error:
+        print(f"There was a exception: {error}")
+
+@app.route('/debug/routes')
+def show_routes():
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'path': str(rule)
+        })
+    return jsonify(routes)
 
 
 
